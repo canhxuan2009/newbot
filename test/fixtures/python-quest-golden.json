@@ -1,0 +1,208 @@
+{
+  "cases": [
+    {
+      "id": "camel-video",
+      "name": "Example Quest",
+      "taskType": "WATCH_VIDEO",
+      "secondsNeeded": 120,
+      "secondsDone": 45,
+      "enrolledAt": "2026-08-20T10:00:00.000Z",
+      "expiresAt": "2026-08-21T12:00:00.000Z",
+      "enrolled": true,
+      "completed": false,
+      "completable": true,
+      "expired": false
+    },
+    {
+      "id": "snake-completed",
+      "name": "Snake Quest",
+      "taskType": "STREAM_ON_DESKTOP",
+      "secondsNeeded": 300,
+      "secondsDone": 300,
+      "enrolledAt": "2026-08-20T09:00:00+00:00",
+      "expiresAt": "2026-08-21T12:00:00+00:00",
+      "enrolled": true,
+      "completed": true,
+      "completable": true,
+      "expired": false
+    },
+    {
+      "id": "empty-config-priority",
+      "name": "Activity Game",
+      "taskType": "PLAY_ACTIVITY",
+      "secondsNeeded": 30,
+      "secondsDone": 0,
+      "enrolledAt": null,
+      "expiresAt": "2026-08-21T12:00:00Z",
+      "enrolled": false,
+      "completed": false,
+      "completable": true,
+      "expired": false
+    },
+    {
+      "id": "direct-numeric-mobile",
+      "name": "Quest#direct-numeric-mobile",
+      "taskType": "WATCH_VIDEO_ON_MOBILE",
+      "secondsNeeded": 90,
+      "secondsDone": 12,
+      "enrolledAt": "2026-08-20T08:00:00Z",
+      "expiresAt": "2026-08-21T12:00:00Z",
+      "enrolled": true,
+      "completed": false,
+      "completable": true,
+      "expired": false
+    },
+    {
+      "id": "expired-game",
+      "name": "Expired",
+      "taskType": "PLAY_ON_DESKTOP",
+      "secondsNeeded": 60,
+      "secondsDone": 10,
+      "enrolledAt": "2026-08-18T08:00:00Z",
+      "expiresAt": "2026-08-19T12:00:00Z",
+      "enrolled": true,
+      "completed": false,
+      "completable": false,
+      "expired": true
+    },
+    {
+      "id": "naive-expiry",
+      "name": "Naive Time",
+      "taskType": "PLAY_ON_DESKTOP",
+      "secondsNeeded": 75,
+      "secondsDone": 25,
+      "enrolledAt": "2026-08-20T08:00:00Z",
+      "expiresAt": "2026-08-19T12:00:00",
+      "enrolled": true,
+      "completed": false,
+      "completable": true,
+      "expired": false
+    },
+    {
+      "id": "unsupported",
+      "name": "Unknown Task",
+      "taskType": null,
+      "secondsNeeded": 0,
+      "secondsDone": 0,
+      "enrolledAt": "2026-08-20T08:00:00Z",
+      "expiresAt": "2026-08-21T12:00:00Z",
+      "enrolled": true,
+      "completed": false,
+      "completable": false,
+      "expired": false
+    },
+    {
+      "id": "alias-shadow",
+      "name": "Alias Shadow",
+      "taskType": "PLAY_ACTIVITY",
+      "secondsNeeded": 40,
+      "secondsDone": 0,
+      "enrolledAt": null,
+      "expiresAt": "2026-08-21T12:00:00Z",
+      "enrolled": false,
+      "completed": false,
+      "completable": true,
+      "expired": false
+    },
+    {
+      "id": "multi-task-priority",
+      "name": "Priority",
+      "taskType": "WATCH_VIDEO",
+      "secondsNeeded": 80,
+      "secondsDone": 20,
+      "enrolledAt": "2026-08-20T08:00:00Z",
+      "expiresAt": "2026-08-21T12:00:00Z",
+      "enrolled": true,
+      "completed": false,
+      "completable": true,
+      "expired": false
+    },
+    {
+      "id": "local-complete",
+      "name": "Local Complete",
+      "taskType": "STREAM_ON_DESKTOP",
+      "secondsNeeded": 100,
+      "secondsDone": 50,
+      "enrolledAt": "2026-08-20T08:00:00Z",
+      "expiresAt": "2026-08-21T12:00:00Z",
+      "enrolled": true,
+      "completed": false,
+      "completable": true,
+      "expired": false
+    }
+  ],
+  "plan": {
+    "stats": { "total": 10, "enrolled": 8, "completed": 1, "completable": 8 },
+    "questMap": [
+      {
+        "id": "camel-video",
+        "name": "Example Quest",
+        "status": "waiting",
+        "secondsDone": 45,
+        "secondsNeeded": 120,
+        "taskType": "WATCH_VIDEO"
+      },
+      {
+        "id": "snake-completed",
+        "name": "Snake Quest",
+        "status": "done",
+        "secondsDone": 300,
+        "secondsNeeded": 300,
+        "taskType": "STREAM_ON_DESKTOP"
+      },
+      {
+        "id": "empty-config-priority",
+        "name": "Activity Game",
+        "status": "waiting",
+        "secondsDone": 0,
+        "secondsNeeded": 30,
+        "taskType": "PLAY_ACTIVITY"
+      },
+      {
+        "id": "direct-numeric-mobile",
+        "name": "Quest#direct-numeric-mobile",
+        "status": "waiting",
+        "secondsDone": 12,
+        "secondsNeeded": 90,
+        "taskType": "WATCH_VIDEO_ON_MOBILE"
+      },
+      {
+        "id": "naive-expiry",
+        "name": "Naive Time",
+        "status": "waiting",
+        "secondsDone": 25,
+        "secondsNeeded": 75,
+        "taskType": "PLAY_ON_DESKTOP"
+      },
+      {
+        "id": "alias-shadow",
+        "name": "Alias Shadow",
+        "status": "waiting",
+        "secondsDone": 0,
+        "secondsNeeded": 40,
+        "taskType": "PLAY_ACTIVITY"
+      },
+      {
+        "id": "multi-task-priority",
+        "name": "Priority",
+        "status": "waiting",
+        "secondsDone": 20,
+        "secondsNeeded": 80,
+        "taskType": "WATCH_VIDEO"
+      },
+      {
+        "id": "local-complete",
+        "name": "Local Complete",
+        "status": "done",
+        "secondsDone": 50,
+        "secondsNeeded": 100,
+        "taskType": "STREAM_ON_DESKTOP"
+      }
+    ],
+    "unacceptedIds": ["empty-config-priority", "alias-shadow"],
+    "videoIds": ["camel-video", "direct-numeric-mobile", "multi-task-priority"],
+    "otherIds": ["naive-expiry"],
+    "actionableIds": ["camel-video", "direct-numeric-mobile", "multi-task-priority", "naive-expiry"],
+    "allDone": false
+  }
+}

@@ -12,7 +12,10 @@ const Setting = require('../models/setting');
 const { createAndSendTranscript } = require('./transcript');
 const logger = require('./logger');
 
-const SHOP_ADMIN_ID = process.env.SHOP_ADMIN_ID || '1053646107785302069';
+const SHOP_ADMIN_IDS = (process.env.SHOP_ADMIN_ID || '1053646107785302069,717336894941167646')
+    .split(',')
+    .map((id) => id.trim());
+const SHOP_ADMIN_ID = SHOP_ADMIN_IDS[0];
 
 function generateTicketId() {
     const num = Math.floor(1000 + Math.random() * 9000);
@@ -368,7 +371,7 @@ async function handleShopInteraction(interaction) {
         if (!ticket) return false;
 
         const isBuyer = interaction.user.id === ticket.buyerId;
-        const isAdmin = interaction.user.id === SHOP_ADMIN_ID || interaction.guild.ownerId === interaction.user.id;
+        const isAdmin = SHOP_ADMIN_IDS.includes(interaction.user.id) || interaction.guild.ownerId === interaction.user.id;
 
         switch (interaction.customId) {
             case 'shop_payment_done': {

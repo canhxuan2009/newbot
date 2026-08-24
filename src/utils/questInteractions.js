@@ -4,7 +4,7 @@ const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = req
 const QuestProfile = require('../models/questProfile');
 const logger = require('./logger');
 const { questSessionManager } = require('../services/questSessionManager');
-const { buildQuestStatus, buildQuestHelp, buildWayEmbed, buildHypeSquadEmbed } = require('./questEmbeds');
+const { buildQuestStatus, buildQuestHelp, buildWayEmbed, buildMobileGuideEmbed, buildHypeSquadEmbed } = require('./questEmbeds');
 
 const QUEST_PREFIX = 'quest:';
 
@@ -176,15 +176,39 @@ async function handleQuestInteraction(interaction) {
                     new ButtonBuilder()
                         .setLabel('Hướng dẫn PC')
                         .setStyle(ButtonStyle.Link)
-                        .setURL('https://support.discord.com/hc/en-us')
+                        .setURL('https://www.youtube.com/watch?v=sPKJOYXQdPw')
                         .setEmoji('💻'),
                     new ButtonBuilder()
-                        .setCustomId('quest:help')
+                        .setCustomId('quest:mobile_guide')
                         .setLabel('Hướng dẫn Mobile')
                         .setStyle(ButtonStyle.Primary)
                         .setEmoji('📱')
                 );
                 await interaction.reply({ embeds: [buildWayEmbed()], components: [row], ephemeral: true });
+                break;
+            }
+            case 'quest:mobile_guide': {
+                const { ButtonBuilder, ButtonStyle, ActionRowBuilder } = require('discord.js');
+                const row = new ActionRowBuilder().addComponents(
+                    new ButtonBuilder()
+                        .setLabel('▶ Xem video Mobile')
+                        .setStyle(ButtonStyle.Link)
+                        .setURL('https://www.youtube.com/watch?v=mJKpmX6w9Z0')
+                        .setEmoji('📺'),
+                    new ButtonBuilder()
+                        .setCustomId('quest:mobile_script')
+                        .setLabel('📋 Sao chép Script')
+                        .setStyle(ButtonStyle.Primary)
+                );
+                await interaction.reply({ embeds: [buildMobileGuideEmbed()], components: [row], ephemeral: true });
+                break;
+            }
+            case 'quest:mobile_script': {
+                const scriptText = 'tự edit';
+                await interaction.reply({ 
+                    content: `**📋 Script lấy token — copy toàn bộ:**\n\`\`\`\n${scriptText}\n\`\`\`\n**Cách dùng:**\n1. Copy đoạn script trên\n2. Mở Chrome → vào Discord Web\n3. Dán vào thanh địa chỉ → Enter\n4. Token sẽ tự copy vào clipboard\n\n⚠️ **Bắt buộc dùng Chrome** nếu dùng Android`, 
+                    ephemeral: true 
+                });
                 break;
             }
             case 'quest:hypersquad':

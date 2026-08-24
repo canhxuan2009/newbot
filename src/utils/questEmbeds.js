@@ -113,6 +113,18 @@ function buildWayEmbed() {
         .setFooter({ text: 'Nem Quest' });
 }
 
+function buildMobileGuideEmbed() {
+    return new EmbedBuilder()
+        .setColor(COLORS.primary)
+        .setTitle('📱 Hướng dẫn lấy Token trên Mobile')
+        .addFields(
+            { name: '📋 Bước 1: Lấy Script', value: 'Nhấn nút **Sao chép Script** bên dưới.', inline: false },
+            { name: '▶️ Bước 2: Xem video', value: '[Xem video hướng dẫn](https://www.youtube.com/watch?v=mJKpmX6w9Z0)', inline: false },
+            { name: '⚠️ Lưu ý', value: '• Android → phải dùng **Chrome**\n• Token = mật khẩu, **không chia sẻ**\n• Lộ token → đổi mật khẩu Discord ngay', inline: false }
+        )
+        .setFooter({ text: 'Nem Quest' });
+}
+
 function buildHypeSquadEmbed(username = 'User') {
     return new EmbedBuilder()
         .setColor(0x7289DA)
@@ -126,4 +138,4 @@ function buildHypeSquadEmbed(username = 'User') {
         .setFooter({ text: '💙 Nem Quest • HypeSquad' });
 }
 
-module.exports = { buildQuestPanel, buildQuestStatus, buildQuestHelp, buildWayEmbed, buildHypeSquadEmbed, progressBar };
+module.exports = { buildQuestPanel, buildQuestStatus, buildQuestHelp, buildWayEmbed, buildMobileGuideEmbed, buildHypeSquadEmbed, progressBar };

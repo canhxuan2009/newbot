@@ -87,17 +87,44 @@ function buildQuestStatus(session) {
     return embed;
 }
 
-function buildQuestHelp() {
-    return new EmbedBuilder()
-        .setColor(COLORS.muted)
-        .setTitle('❔ Hướng dẫn Quest Assistant')
-        .setDescription([
-            '• **Bắt đầu:** mở một session theo dõi bằng provider được Discord cấp quyền.',
-            '• **Trạng thái:** xem tiến độ gần nhất đã lưu trong MongoDB.',
-            '• **Dừng:** hủy session của chính bạn bằng cơ chế abort an toàn.',
-            '',
-            'Bot không yêu cầu mật khẩu hoặc Discord user token.',
-        ].join('\n'));
+function buildQuestControlPanel(username, avatarUrl, isRunning) {
+    const embed = new EmbedBuilder()
+        .setColor(COLORS.primary)
+        .setTitle('♟ Nem Quest Bot')
+        .addFields({
+            name: 'farm discord quests · session runs `5s`',
+            value: 'use `/stat` to check progress',
+            inline: true
+        });
+
+    if (avatarUrl) {
+        embed.setThumbnail(avatarUrl);
+    }
+
+    embed.addFields({ name: '\u200b', value: '\u200b', inline: false });
+
+    if (isRunning) {
+        embed.addFields({
+            name: '⚡ **session running** — farming quests',
+            value: 'use **Stop** in menu to end · check DMs for live status',
+            inline: false
+        });
+    } else {
+        embed.addFields({
+            name: '♥ **token linked** — ready to start',
+            value: 'click start to begin your session',
+            inline: false
+        });
+    }
+
+    embed.addFields({
+        name: 'want to use a different token?',
+        value: 'your token = safe with us',
+        inline: false
+    });
+    
+    embed.setFooter({ text: `Yêu cầu bởi ${username}` });
+    return embed;
 }
 
 function buildWayEmbed() {
@@ -138,4 +165,4 @@ function buildHypeSquadEmbed(username = 'User') {
         .setFooter({ text: '💙 Nem Quest • HypeSquad' });
 }
 
-module.exports = { buildQuestPanel, buildQuestStatus, buildQuestHelp, buildWayEmbed, buildMobileGuideEmbed, buildHypeSquadEmbed, progressBar };
+module.exports = { buildQuestPanel, buildQuestControlPanel, buildQuestStatus, buildWayEmbed, buildMobileGuideEmbed, buildHypeSquadEmbed, progressBar };

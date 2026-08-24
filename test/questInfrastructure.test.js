@@ -95,23 +95,6 @@ test('Quest interaction router ignores unrelated components', async () => {
     assert.equal(await handleQuestInteraction(interaction), false);
 });
 
-test('Quest help interaction replies ephemerally without touching MongoDB', async () => {
-    let reply;
-    const interaction = {
-        isModalSubmit: () => false,
-        isButton: () => true,
-        isStringSelectMenu: () => false,
-        customId: 'quest:help',
-        guildId: 'guild',
-        user: { id: 'user', displayName: 'Tester', username: 'tester' },
-        reply: async (payload) => { reply = payload; },
-    };
-
-    assert.equal(await handleQuestInteraction(interaction), true);
-    assert.equal(reply.ephemeral, true);
-    assert.equal(reply.embeds[0].toJSON().title, '❔ Hướng dẫn Quest Assistant');
-});
-
 test('Quest router rejects direct-message interactions before session access', async () => {
     let reply;
     const interaction = {

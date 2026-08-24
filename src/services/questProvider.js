@@ -107,6 +107,29 @@ class DiscordQuestProvider {
         }
     }
 
+    async changeHypeSquad({ token, houseId }) {
+        if (!token) return { success: false, msg: 'No token provided' };
+        try {
+            const res = await this._fetchWithRetry('https://discord.com/api/v9/hypesquad/online', {
+                method: 'POST',
+                headers: this._getHeaders(token),
+                body: JSON.stringify({ house_id: Number(houseId) })
+            });
+            
+            if (res.ok || res.status === 204) return { success: true, msg: 'Thành công' };
+            if (res.status === 401) return { success: false, msg: 'Token không hợp lệ' };
+            
+            const data = await res.json().catch(() => ({}));
+            if (res.status === 429) {
+                const waitTime = data.retry_after || 5;
+                return { success: false, msg: `Rate limit — chờ ${waitTime.toFixed(1)}s rồi thử lại` };
+            }
+            return { success: false, msg: `Lỗi HTTP ${res.status}` };
+        } catch (e) {
+            return { success: false, msg: `Lỗi kết nối: ${e.message}` };
+        }
+    }
+
     async listQuests({ profile, signal }) {
         if (!profile.discordToken) return [];
         const res = await this._fetchWithRetry(`${API_BASE}/quests/@me`, {

@@ -4,7 +4,7 @@ const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = req
 const QuestProfile = require('../models/questProfile');
 const logger = require('./logger');
 const { questSessionManager } = require('../services/questSessionManager');
-const { buildQuestStatus, buildQuestHelp } = require('./questEmbeds');
+const { buildQuestStatus, buildQuestHelp, buildWayEmbed, buildHypeSquadEmbed } = require('./questEmbeds');
 
 const QUEST_PREFIX = 'quest:';
 
@@ -61,7 +61,9 @@ async function handleQuestInteraction(interaction) {
         }
     }
 
-    if (!interaction.isButton() || !interaction.customId.startsWith(QUEST_PREFIX)) return false;
+    const isQuestButton = interaction.isButton() && interaction.customId.startsWith(QUEST_PREFIX);
+    const isQuestMenu = interaction.isStringSelectMenu() && interaction.customId === 'menu_select';
+    if (!isQuestButton && !isQuestMenu) return false;
 
     if (!interaction.guildId) {
         await interaction.reply({ content: '❌ Quest chỉ hoạt động trong server.', ephemeral: true });
@@ -75,20 +77,44 @@ async function handleQuestInteraction(interaction) {
     };
 
     try {
-        switch (interaction.customId) {
+        let action = interaction.customId;
+        if (isQuestMenu) {
+            const choice = interaction.values[0];
+            const actionMap = {
+                quest: 'quest:start',
+                change: 'quest:change',
+                stat: 'quest:stat',
+                stop: 'quest:stop',
+                hypersquad: 'quest:hypersquad',
+                way: 'quest:way',
+            };
+            action = actionMap[choice] || choice;
+
+            // Optional: reset dropdown visually
+            try {
+                if (interaction.message) {
+                    const row = ActionRowBuilder.from(interaction.message.components[0]);
+                    await interaction.message.edit({ components: [row] });
+                }
+            } catch (err) { /* ignore */ }
+        }
+
+        switch (action) {
             case 'quest:start': {
                 const profile = await QuestProfile.findOne({ guildId: context.guildId, requesterId: context.requesterId });
                 
                 if (!profile || !profile.discordToken) {
                     const modal = new ModalBuilder()
                         .setCustomId('quest_token_modal')
-                        .setTitle('Nhập Discord Token');
+                        .setTitle('🔑 Nhập Discord Token');
 
                     const tokenInput = new TextInputBuilder()
                         .setCustomId('discordToken')
-                        .setLabel('Vui lòng nhập Token Discord của bạn')
-                        .setStyle(TextInputStyle.Short)
+                        .setLabel('Discord Token')
+                        .setStyle(TextInputStyle.Paragraph)
                         .setPlaceholder('Nhập token tại đây...')
+                        .setMinLength(50)
+                        .setMaxLength(200)
                         .setRequired(true);
 
                     modal.addComponents(new ActionRowBuilder().addComponents(tokenInput));
@@ -100,12 +126,30 @@ async function handleQuestInteraction(interaction) {
                 const isValid = await questSessionManager.provider.validateToken(profile.discordToken);
                 if (!isValid) {
                     await QuestProfile.updateOne({ _id: profile._id }, { $unset: { discordToken: 1 } });
-                    return interaction.editReply({ content: '❌ Token của bạn đã hết hạn hoặc không hợp lệ. Vui lòng bấm Bắt đầu lại để nhập token mới.' });
+                    return interaction.editReply({ content: '❌ Token của bạn đã hết hạn hoặc không hợp lệ. Vui lòng chọn Bắt đầu lại để nhập token mới.' });
                 }
 
                 const session = await questSessionManager.start(context);
                 await interaction.editReply({ content: `✅ Đã bắt đầu session \`${session._id}\`.` });
                 break;
+            }
+            case 'quest:change': {
+                const modal = new ModalBuilder()
+                    .setCustomId('quest_token_modal')
+                    .setTitle('🔑 Đổi Token Discord');
+
+                const tokenInput = new TextInputBuilder()
+                    .setCustomId('discordToken')
+                    .setLabel('Discord Token')
+                    .setStyle(TextInputStyle.Paragraph)
+                    .setPlaceholder('Nhập token mới tại đây...')
+                    .setMinLength(50)
+                    .setMaxLength(200)
+                    .setRequired(true);
+
+                modal.addComponents(new ActionRowBuilder().addComponents(tokenInput));
+                await interaction.showModal(modal);
+                return true;
             }
             case 'quest:stat': {
                 await interaction.deferReply({ ephemeral: true });
@@ -125,6 +169,12 @@ async function handleQuestInteraction(interaction) {
             }
             case 'quest:help':
                 await interaction.reply({ embeds: [buildQuestHelp()], ephemeral: true });
+                break;
+            case 'quest:way':
+                await interaction.reply({ embeds: [buildWayEmbed()], ephemeral: true });
+                break;
+            case 'quest:hypersquad':
+                await interaction.reply({ embeds: [buildHypeSquadEmbed(context.displayName)], ephemeral: true });
                 break;
             default:
                 await interaction.reply({ content: '❌ Thao tác Quest không hợp lệ.', ephemeral: true });

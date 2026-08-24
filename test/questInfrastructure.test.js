@@ -89,6 +89,7 @@ test('Quest interaction router ignores unrelated components', async () => {
     const interaction = {
         isModalSubmit: () => false,
         isButton: () => true,
+        isStringSelectMenu: () => false,
         customId: 'shop_cancel',
     };
     assert.equal(await handleQuestInteraction(interaction), false);
@@ -99,6 +100,7 @@ test('Quest help interaction replies ephemerally without touching MongoDB', asyn
     const interaction = {
         isModalSubmit: () => false,
         isButton: () => true,
+        isStringSelectMenu: () => false,
         customId: 'quest:help',
         guildId: 'guild',
         user: { id: 'user', displayName: 'Tester', username: 'tester' },
@@ -115,6 +117,7 @@ test('Quest router rejects direct-message interactions before session access', a
     const interaction = {
         isModalSubmit: () => false,
         isButton: () => true,
+        isStringSelectMenu: () => false,
         customId: 'quest:stat',
         guildId: null,
         reply: async (payload) => { reply = payload; },

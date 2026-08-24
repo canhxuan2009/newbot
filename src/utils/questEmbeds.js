@@ -31,11 +31,12 @@ function progressBar(done, total, width = 10) {
     return `\`${'█'.repeat(filled)}${'░'.repeat(width - filled)}\` ${percent}%`;
 }
 
-function buildQuestPanel({ available = false } = {}) {
+function buildQuestPanel() {
     return new EmbedBuilder()
         .setColor(COLORS.primary)
         .setTitle('🌸 Drix bot — MENUQUEST')
         .setDescription('Chọn danh mục bên dưới để xem lệnh chi tiết.')
+        .setImage('attachment://menu.gif')
         .setFooter({ text: 'Drix Bot' });
 }
 
@@ -99,4 +100,30 @@ function buildQuestHelp() {
         ].join('\n'));
 }
 
-module.exports = { buildQuestPanel, buildQuestStatus, buildQuestHelp, progressBar };
+function buildWayEmbed() {
+    return new EmbedBuilder()
+        .setColor(COLORS.primary)
+        .setTitle('🔑 Hướng dẫn lấy Discord Token')
+        .setDescription('Chọn hướng dẫn phù hợp với thiết bị của bạn.')
+        .addFields(
+            { name: '💻 PC / Desktop', value: 'Nhấn nút **Hướng dẫn PC**.', inline: true },
+            { name: '📱 Mobile', value: 'Nhấn nút **Hướng dẫn Mobile** → script + video.', inline: true },
+            { name: '⚠️ Lưu ý', value: 'Token = mật khẩu tài khoản Discord. **Không chia sẻ với ai.**', inline: false }
+        )
+        .setFooter({ text: 'Drix Bot' });
+}
+
+function buildHypeSquadEmbed(username = 'User') {
+    return new EmbedBuilder()
+        .setColor(0x7289DA)
+        .setTitle('🏆 HypeSquad Badge Changer')
+        .setDescription(`Tài khoản: **${username}**\nChọn HypeSquad House muốn đổi sang:`)
+        .addFields(
+            { name: '🦁 Bravery', value: 'House of Bravery', inline: true },
+            { name: '💡 Brilliance', value: 'House of Brilliance', inline: true },
+            { name: '⚖️ Balance', value: 'House of Balance', inline: true }
+        )
+        .setFooter({ text: '💙 Drix Bot • HypeSquad' });
+}
+
+module.exports = { buildQuestPanel, buildQuestStatus, buildQuestHelp, buildWayEmbed, buildHypeSquadEmbed, progressBar };

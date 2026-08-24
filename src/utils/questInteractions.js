@@ -170,9 +170,23 @@ async function handleQuestInteraction(interaction) {
             case 'quest:help':
                 await interaction.reply({ embeds: [buildQuestHelp()], ephemeral: true });
                 break;
-            case 'quest:way':
-                await interaction.reply({ embeds: [buildWayEmbed()], ephemeral: true });
+            case 'quest:way': {
+                const { ButtonBuilder, ButtonStyle, ActionRowBuilder } = require('discord.js');
+                const row = new ActionRowBuilder().addComponents(
+                    new ButtonBuilder()
+                        .setLabel('Hướng dẫn PC')
+                        .setStyle(ButtonStyle.Link)
+                        .setURL('https://support.discord.com/hc/en-us')
+                        .setEmoji('💻'),
+                    new ButtonBuilder()
+                        .setCustomId('quest:help')
+                        .setLabel('Hướng dẫn Mobile')
+                        .setStyle(ButtonStyle.Primary)
+                        .setEmoji('📱')
+                );
+                await interaction.reply({ embeds: [buildWayEmbed()], components: [row], ephemeral: true });
                 break;
+            }
             case 'quest:hypersquad':
                 await interaction.reply({ embeds: [buildHypeSquadEmbed(context.displayName)], ephemeral: true });
                 break;

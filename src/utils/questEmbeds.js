@@ -34,10 +34,10 @@ function progressBar(done, total, width = 10) {
 function buildQuestPanel() {
     return new EmbedBuilder()
         .setColor(COLORS.primary)
-        .setTitle('🌸 Drix bot — MENUQUEST')
+        .setTitle('🌸 Nem Quest — MENUQUEST')
         .setDescription('Chọn danh mục bên dưới để xem lệnh chi tiết.')
         .setImage('attachment://menu.gif')
-        .setFooter({ text: 'Drix Bot' });
+        .setFooter({ text: 'Nem Quest' });
 }
 
 function buildQuestStatus(session) {
@@ -110,7 +110,7 @@ function buildWayEmbed() {
             { name: '📱 Mobile', value: 'Nhấn nút **Hướng dẫn Mobile** → script + video.', inline: true },
             { name: '⚠️ Lưu ý', value: 'Token = mật khẩu tài khoản Discord. **Không chia sẻ với ai.**', inline: false }
         )
-        .setFooter({ text: 'Drix Bot' });
+        .setFooter({ text: 'Nem Quest' });
 }
 
 function buildHypeSquadEmbed(username = 'User') {
@@ -123,7 +123,7 @@ function buildHypeSquadEmbed(username = 'User') {
             { name: '💡 Brilliance', value: 'House of Brilliance', inline: true },
             { name: '⚖️ Balance', value: 'House of Balance', inline: true }
         )
-        .setFooter({ text: '💙 Drix Bot • HypeSquad' });
+        .setFooter({ text: '💙 Nem Quest • HypeSquad' });
 }
 
 module.exports = { buildQuestPanel, buildQuestStatus, buildQuestHelp, buildWayEmbed, buildHypeSquadEmbed, progressBar };

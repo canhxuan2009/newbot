@@ -19,7 +19,7 @@ test('builds valid Discord payloads for panel and status', () => {
         quests: [{ name: 'Video', status: 'running', secondsDone: 30, secondsNeeded: 60 }],
     }).toJSON();
 
-    assert.equal(panel.title, '🌸 Quest Assistant');
+    assert.equal(panel.title, '🌸 Drix bot — MENUQUEST');
     assert.equal(status.title, '📊 Trạng thái Quest');
     assert.match(status.fields.at(-1).value, /50%/);
 });

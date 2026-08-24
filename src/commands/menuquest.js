@@ -4,38 +4,54 @@ const {
     SlashCommandBuilder,
     PermissionFlagsBits,
     ActionRowBuilder,
-    ButtonBuilder,
-    ButtonStyle,
+    StringSelectMenuBuilder,
+    StringSelectMenuOptionBuilder,
 } = require('discord.js');
 const { hasPermission } = require('../utils/permissions');
 const { questSessionManager } = require('../services/questSessionManager');
 const { buildQuestPanel } = require('../utils/questEmbeds');
 const Setting = require('../models/setting');
 
-function buildQuestComponents(available) {
-    return [new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-            .setCustomId('quest:start')
-            .setLabel('Bắt đầu')
-            .setEmoji('▶️')
-            .setStyle(ButtonStyle.Primary)
-            .setDisabled(!available),
-        new ButtonBuilder()
-            .setCustomId('quest:stat')
-            .setLabel('Trạng thái')
-            .setEmoji('📊')
-            .setStyle(ButtonStyle.Secondary),
-        new ButtonBuilder()
-            .setCustomId('quest:stop')
-            .setLabel('Dừng')
-            .setEmoji('⏹️')
-            .setStyle(ButtonStyle.Danger),
-        new ButtonBuilder()
-            .setCustomId('quest:help')
-            .setLabel('Hướng dẫn')
-            .setEmoji('❔')
-            .setStyle(ButtonStyle.Secondary),
-    )];
+function buildQuestComponents() {
+    const selectMenu = new StringSelectMenuBuilder()
+        .setCustomId('menu_select')
+        .setPlaceholder('Chọn danh mục...')
+        .setMinValues(1)
+        .setMaxValues(1)
+        .addOptions(
+            new StringSelectMenuOptionBuilder()
+                .setLabel('Quest')
+                .setValue('quest')
+                .setDescription('Thêm token & bắt đầu auto quest')
+                .setEmoji('🚀'),
+            new StringSelectMenuOptionBuilder()
+                .setLabel('Change')
+                .setValue('change')
+                .setDescription('Đổi token Discord của bạn')
+                .setEmoji('🔄'),
+            new StringSelectMenuOptionBuilder()
+                .setLabel('Stat')
+                .setValue('stat')
+                .setDescription('Xem tiến độ quest thời gian thực')
+                .setEmoji('📊'),
+            new StringSelectMenuOptionBuilder()
+                .setLabel('Stop')
+                .setValue('stop')
+                .setDescription('Dừng auto quest của tài khoản')
+                .setEmoji('⏹️'),
+            new StringSelectMenuOptionBuilder()
+                .setLabel('Hypersquad')
+                .setValue('hypersquad')
+                .setDescription('Đổi HypeSquad Badge Discord')
+                .setEmoji('🏆'),
+            new StringSelectMenuOptionBuilder()
+                .setLabel('Way')
+                .setValue('way')
+                .setDescription('Hướng dẫn lấy Discord Token')
+                .setEmoji('🔑')
+        );
+
+    return [new ActionRowBuilder().addComponents(selectMenu)];
 }
 
 module.exports = {
@@ -85,8 +101,8 @@ module.exports = {
         }
 
         const menuMessage = await channel.send({
-            embeds: [buildQuestPanel({ available })],
-            components: buildQuestComponents(available),
+            embeds: [buildQuestPanel()],
+            components: buildQuestComponents(),
         });
 
         await Setting.findOneAndUpdate(
@@ -95,9 +111,6 @@ module.exports = {
             { upsert: true, new: true, runValidators: true },
         );
 
-        const providerNote = available
-            ? ''
-            : '\n⚠️ Nút Bắt đầu đang khóa vì chưa có provider API chính thức.';
-        return interaction.editReply(`✅ Đã đăng bảng Quest tại ${channel}.${providerNote}`);
+        return interaction.editReply(`✅ Đã đăng bảng Quest tại ${channel}.`);
     },
 };

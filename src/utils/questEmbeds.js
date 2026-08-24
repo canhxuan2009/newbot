@@ -33,21 +33,10 @@ function progressBar(done, total, width = 10) {
 
 function buildQuestPanel({ available = false } = {}) {
     return new EmbedBuilder()
-        .setColor(available ? COLORS.primary : COLORS.warning)
-        .setTitle('🌸 Quest Assistant')
-        .setDescription('Theo dõi trạng thái Quest bằng kết nối Discord được cấp quyền chính thức.')
-        .addFields(
-            {
-                name: '▶ Bắt đầu',
-                value: available
-                    ? 'Tạo một session theo dõi Quest cho tài khoản của bạn.'
-                    : 'Đang khóa: chưa có Quest API/OAuth2 provider chính thức.',
-                inline: false,
-            },
-            { name: '📊 Trạng thái', value: 'Xem session gần nhất và snapshot tiến độ.', inline: true },
-            { name: '⏹ Dừng', value: 'Dừng session hiện tại của chính bạn.', inline: true },
-        )
-        .setFooter({ text: 'Không nhập hoặc lưu Discord user token' });
+        .setColor(COLORS.primary)
+        .setTitle('🌸 Drix bot — MENUQUEST')
+        .setDescription('Chọn danh mục bên dưới để xem lệnh chi tiết.')
+        .setFooter({ text: 'Drix Bot' });
 }
 
 function buildQuestStatus(session) {

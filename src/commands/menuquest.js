@@ -102,7 +102,7 @@ module.exports = {
 
         const { AttachmentBuilder } = require('discord.js');
         const path = require('path');
-        const gifPath = path.join(__dirname, '..', 'assets', 'menu.gif');
+        const gifPath = path.join(__dirname, '..', '..', 'assets', 'menu.gif');
         const attachment = new AttachmentBuilder(gifPath, { name: 'menu.gif' });
 
         const menuMessage = await channel.send({

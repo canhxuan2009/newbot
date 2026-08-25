@@ -304,12 +304,17 @@ client.on(Events.GuildMemberAdd, async (member) => {
 
     const embed = {
         title: 'Chào Mừng Thành Viên Mới ⭐',
-        description: `Xin chào ${member} 👋\nBạn là thành viên thứ **#${memberCount}** sì to chúng tớ 🤍\n\n` +
-            `# \u200b\n\n` +
-            `${stockChannel} ・ Mua hàng tại đây!\n` +
-            `${buyChannel} ・ Trò chuyện tại đây!\n` +
-            `${tosChannel} ・ Thu Money hàng ngày tại đây!\n\n` +
-            `Cảm ơn bạn đã gia nhập Nem Sờ Ti 💚`,
+        description: `Xin chào ${member} 👋\nBạn là thành viên thứ **#${memberCount}** sì to chúng tớ 🤍`,
+        fields: [
+            {
+                name: '\u200b', // Empty name creates a clean block for the channels
+                value: `${stockChannel} ・ Mua hàng tại đây!\n` +
+                       `${buyChannel} ・ Trò chuyện tại đây!\n` +
+                       `${tosChannel} ・ Thu Money hàng ngày tại đây!\n\n` +
+                       `Cảm ơn bạn đã gia nhập Nem Sờ Ti 💚`,
+                inline: false
+            }
+        ],
         color: 0x2ecc71, // Vibrant Green
         thumbnail: {
             url: member.displayAvatarURL({ dynamic: true, size: 512 }) || member.guild.iconURL({ dynamic: true, size: 512 })

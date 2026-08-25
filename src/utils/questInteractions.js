@@ -71,7 +71,7 @@ async function handleQuestInteraction(interaction) {
             const avatarUrl = interaction.user.displayAvatarURL({ dynamic: true });
             const isRunning = await questSessionManager.getStatus(context).then(s => s != null && s.status === 'running');
             return interaction.editReply({ 
-                embeds: [buildQuestControlPanel(context.displayName, avatarUrl, isRunning)], 
+                embeds: [buildQuestControlPanel(context.displayName, avatarUrl, isRunning), buildQuestStatus(session)], 
                 components: [row] 
             });
         } catch (error) {
@@ -268,7 +268,7 @@ async function handleQuestInteraction(interaction) {
 
                 const avatarUrl = interaction.user.displayAvatarURL({ dynamic: true });
                 await interaction.editReply({ 
-                    embeds: [buildQuestControlPanel(context.displayName, avatarUrl, true)], 
+                    embeds: [buildQuestControlPanel(context.displayName, avatarUrl, true), buildQuestStatus(session)], 
                     components: [row] 
                 });
                 break;

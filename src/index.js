@@ -305,7 +305,7 @@ client.on(Events.GuildMemberAdd, async (member) => {
     const embed = {
         title: 'Chào Mừng Thành Viên Mới ⭐',
         description: `Xin chào ${member} 👋\nBạn là thành viên thứ **#${memberCount}** sì to chúng tớ 🤍\n\n` +
-            `───────────────────────────────\n\n` +
+            `***\n\n` +
             `${stockChannel} ・ Mua hàng tại đây!\n` +
             `${buyChannel} ・ Trò chuyện tại đây!\n` +
             `${tosChannel} ・ Thu Money hàng ngày tại đây!\n\n` +

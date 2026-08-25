@@ -120,7 +120,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
 // Xử lý Button & SelectMenu interactions
 client.on(Events.InteractionCreate, async (interaction) => {
-    if (!interaction.isButton() && !interaction.isStringSelectMenu()) return;
+    if (!interaction.isButton() && !interaction.isStringSelectMenu() && !interaction.isModalSubmit()) return;
 
     try {
         if (await handleQuestInteraction(interaction)) return;

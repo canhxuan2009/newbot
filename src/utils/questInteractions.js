@@ -1,6 +1,6 @@
 'use strict';
 
-const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = require('discord.js');
+const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } = require('discord.js');
 const QuestProfile = require('../models/questProfile');
 const logger = require('./logger');
 const { questSessionManager } = require('../services/questSessionManager');
@@ -56,7 +56,7 @@ async function handleQuestInteraction(interaction) {
 
             const session = await questSessionManager.start(context);
             
-            const { ButtonBuilder, ButtonStyle, ActionRowBuilder } = require('discord.js');
+
             const row = new ActionRowBuilder().addComponents(
                 new ButtonBuilder()
                     .setCustomId('quest:change')
@@ -101,7 +101,7 @@ async function handleQuestInteraction(interaction) {
                 { upsert: true }
             );
 
-            const { ButtonBuilder, ButtonStyle, ActionRowBuilder } = require('discord.js');
+
             const row = new ActionRowBuilder().addComponents(
                 new ButtonBuilder()
                     .setCustomId('quest:hs_1')
@@ -192,7 +192,7 @@ async function handleQuestInteraction(interaction) {
                     return interaction.editReply({ content: '❌ Token của bạn đã hết hạn hoặc không hợp lệ. Vui lòng chọn Bắt đầu lại để nhập token mới.' });
                 }
 
-                const { ButtonBuilder, ButtonStyle, ActionRowBuilder } = require('discord.js');
+
                 const row = new ActionRowBuilder().addComponents(
                     new ButtonBuilder()
                         .setCustomId('quest:change')
@@ -223,7 +223,7 @@ async function handleQuestInteraction(interaction) {
                 const isValid = await questSessionManager.provider.validateToken(profile.discordToken);
                 if (!isValid) {
                     await QuestProfile.updateOne({ _id: profile._id }, { $unset: { discordToken: 1 } });
-                    const { EmbedBuilder } = require('discord.js');
+
                     const embed = new EmbedBuilder()
                         .setTitle('⚠️ Token không còn hoạt động')
                         .setDescription('❌ Token của bạn đã hết hạn hoặc bị thu hồi.\n\nNhấn **🔄 Change Token** để nhập token mới.')
@@ -236,7 +236,7 @@ async function handleQuestInteraction(interaction) {
                 const actionable = quests.filter(q => isCompletable(q) && !isCompleted(q));
 
                 if (actionable.length === 0) {
-                    const { EmbedBuilder } = require('discord.js');
+
                     const embed = new EmbedBuilder()
                         .setTitle('🌸 Không có nhiệm vụ nào')
                         .setDescription('✅ Tất cả Discord Quest đã hoàn thành rồi!\n\nQuay lại khi Discord phát hành quest mới nhé 🎯')
@@ -252,7 +252,7 @@ async function handleQuestInteraction(interaction) {
 
                 await questSessionManager.start(context);
                 
-                const { ButtonBuilder, ButtonStyle, ActionRowBuilder } = require('discord.js');
+
                 const row = new ActionRowBuilder().addComponents(
                     new ButtonBuilder()
                         .setCustomId('quest:change')
@@ -311,7 +311,7 @@ async function handleQuestInteraction(interaction) {
                 await interaction.reply({ embeds: [buildQuestHelp()], ephemeral: true });
                 break;
             case 'quest:way': {
-                const { ButtonBuilder, ButtonStyle, ActionRowBuilder } = require('discord.js');
+
                 const row = new ActionRowBuilder().addComponents(
                     new ButtonBuilder()
                         .setLabel('Hướng dẫn PC')
@@ -328,7 +328,7 @@ async function handleQuestInteraction(interaction) {
                 break;
             }
             case 'quest:mobile_guide': {
-                const { ButtonBuilder, ButtonStyle, ActionRowBuilder } = require('discord.js');
+
                 const row = new ActionRowBuilder().addComponents(
                     new ButtonBuilder()
                         .setLabel('▶ Xem video Mobile')
@@ -373,7 +373,7 @@ async function handleQuestInteraction(interaction) {
                     return true;
                 }
 
-                const { ButtonBuilder, ButtonStyle, ActionRowBuilder } = require('discord.js');
+
                 const row = new ActionRowBuilder().addComponents(
                     new ButtonBuilder()
                         .setCustomId('quest:hs_1')
@@ -410,7 +410,7 @@ async function handleQuestInteraction(interaction) {
                 const house = houseMap[action];
                 const res = await questSessionManager.provider.changeHypeSquad({ token: profile.discordToken, houseId: house.id });
                 
-                const { EmbedBuilder } = require('discord.js');
+
                 if (res.success) {
                     const embed = new EmbedBuilder()
                         .setTitle(`${house.emoji} HypeSquad ${house.name}`)

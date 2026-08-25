@@ -120,6 +120,9 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
 // Xử lý Button & SelectMenu interactions
 client.on(Events.InteractionCreate, async (interaction) => {
+    if (interaction.isModalSubmit()) {
+        logger.info(`[DEBUG] Nhận được ModalSubmit với customId: ${interaction.customId}`);
+    }
     if (!interaction.isButton() && !interaction.isStringSelectMenu() && !interaction.isModalSubmit()) return;
 
     try {

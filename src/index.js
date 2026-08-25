@@ -305,14 +305,17 @@ client.on(Events.GuildMemberAdd, async (member) => {
     const embed = {
         title: 'Chào Mừng Thành Viên Mới ⭐',
         description: `Xin chào ${member} 👋\nBạn là thành viên thứ **#${memberCount}** sì to chúng tớ 🤍\n\n` +
-                     `---\n\n` +
-                     `${stockChannel} Xem bảng giá tại đây!\n` +
-                     `${buyChannel} Mua hàng tại đây!\n` +
-                     `${tosChannel} Các chính sách bảo hành và quy định của sì to!\n\n` +
-                     `Cảm ơn bạn đã gia nhập Vibe Sì To 💚`,
+            `---\n\n` +
+            `${stockChannel} ・ Mua hàng tại đây!\n` +
+            `${buyChannel} ・ Trò chuyện tại đây!\n` +
+            `${tosChannel} ・ Thu Money hàng ngày tại đây!\n\n` +
+            `Cảm ơn bạn đã gia nhập Nem Sờ Ti 💚`,
         color: 0x2ecc71, // Vibrant Green
         thumbnail: {
             url: member.displayAvatarURL({ dynamic: true, size: 512 }) || member.guild.iconURL({ dynamic: true, size: 512 })
+        },
+        image: {
+            url: 'https://cdn.discordapp.com/attachments/1524083621512613918/1541800402230710302/ezgif-53c83bb88da2f063.gif?ex=6a8ee905&is=6a8d9785&hm=eb184c6710d111973d27eaa2186ecf8ef26890410eee0c92e2f147a9409e5518'
         }
     };
 

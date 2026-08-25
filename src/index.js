@@ -288,6 +288,42 @@ client.on(Events.MessageCreate, async (message) => {
     }
 });
 
+// ─── Tính năng Chào Mừng Thành Viên Mới ─────────────────────────────────
+client.on(Events.GuildMemberAdd, async (member) => {
+    const welcomeChannelId = process.env.WELCOME_CHANNEL_ID;
+    if (!welcomeChannelId) return;
+
+    const channel = member.guild.channels.cache.get(welcomeChannelId);
+    if (!channel) return;
+
+    const stockChannel = process.env.WELCOME_STOCK_CHANNEL_ID ? `<#${process.env.WELCOME_STOCK_CHANNEL_ID}>` : '# 🛒 ・ stock';
+    const buyChannel = process.env.WELCOME_BUY_CHANNEL_ID ? `<#${process.env.WELCOME_BUY_CHANNEL_ID}>` : '# 📩 ・ mua-hàng';
+    const tosChannel = process.env.WELCOME_TOS_CHANNEL_ID ? `<#${process.env.WELCOME_TOS_CHANNEL_ID}>` : '# 📜 ・ tos-bảo-hành';
+
+    const memberCount = member.guild.memberCount.toLocaleString('vi-VN');
+
+    const embed = {
+        title: 'Chào Mừng Thành Viên Mới ⭐',
+        description: `Xin chào ${member} 👋\nBạn là thành viên thứ **#${memberCount}** sì to chúng tớ 🤍\n\n` +
+                     `---\n\n` +
+                     `${stockChannel} Xem bảng giá tại đây!\n` +
+                     `${buyChannel} Mua hàng tại đây!\n` +
+                     `${tosChannel} Các chính sách bảo hành và quy định của sì to!\n\n` +
+                     `Cảm ơn bạn đã gia nhập Vibe Sì To 💚`,
+        color: 0x2ecc71, // Vibrant Green
+        thumbnail: {
+            url: member.displayAvatarURL({ dynamic: true, size: 512 }) || member.guild.iconURL({ dynamic: true, size: 512 })
+        }
+    };
+
+    try {
+        await channel.send({ embeds: [embed] });
+        logger.info(`[Welcome] Đã gửi tin nhắn chào mừng cho ${member.user.tag}`);
+    } catch (error) {
+        logger.error(`[Welcome] Lỗi khi gửi tin nhắn chào mừng: ${error.message}`);
+    }
+});
+
 // Khởi chạy bot
 client.login(process.env.DISCORD_TOKEN);
 

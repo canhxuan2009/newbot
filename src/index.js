@@ -8,6 +8,8 @@ const { init: initAutoRename, scheduleRename } = require('./utils/autoRename');
 const { getTracked } = require('./utils/tracker');
 const { translateToVietnamese } = require('./utils/translator');
 const { handleShopInteraction } = require('./utils/shopInteractions');
+const questDb = require('./utils/questDb');
+const { autoResumeQuests, handleQuestInteraction } = require('./utils/questInteractions');
 
 
 // Cấu hình dịch tự động DonutSMP
@@ -34,6 +36,14 @@ mongoose.connect(process.env.MONGODB_URI)
         logger.error(`❌ Lỗi kết nối MongoDB: ${err.message}`);
         process.exit(1);
     });
+
+// Khởi tạo database cho Quest
+try {
+    questDb.initDb();
+    logger.info('✅ Đã kết nối cơ sở dữ liệu SQLite cho Quest.');
+} catch (err) {
+    logger.error(`❌ Lỗi kết nối SQLite: ${err.message}`);
+}
 
 // Global error handlers
 process.on('unhandledRejection', (reason) => {
@@ -82,7 +92,7 @@ client.once(Events.ClientReady, async (readyClient) => {
     logger.info(`🤖 Bot đã đăng nhập thành công dưới tên: ${readyClient.user.tag}`);
     logger.info(`📁 File log phiên làm việc: ${logger.currentFile}`);
 
-
+    await autoResumeQuests(readyClient);
 });
 
 // Xử lý slash commands
@@ -123,6 +133,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     try {
 
         await handleShopInteraction(interaction);
+        await handleQuestInteraction(interaction, client);
     } catch (error) {
         logger.error(`[Interaction] Lỗi xử lý: ${error.message}`);
         const reply = { content: '❌ Đã xảy ra lỗi khi xử lý yêu cầu.', ephemeral: true };

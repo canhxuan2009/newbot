@@ -8,8 +8,7 @@ const { init: initAutoRename, scheduleRename } = require('./utils/autoRename');
 const { getTracked } = require('./utils/tracker');
 const { translateToVietnamese } = require('./utils/translator');
 const { handleShopInteraction } = require('./utils/shopInteractions');
-const { handleQuestInteraction } = require('./utils/questInteractions');
-const { questSessionManager } = require('./services/questSessionManager');
+
 
 // Cấu hình dịch tự động DonutSMP
 const TRANSLATE_SOURCE = process.env.TRANSLATE_SOURCE_CHANNEL;
@@ -83,11 +82,7 @@ client.once(Events.ClientReady, async (readyClient) => {
     logger.info(`🤖 Bot đã đăng nhập thành công dưới tên: ${readyClient.user.tag}`);
     logger.info(`📁 File log phiên làm việc: ${logger.currentFile}`);
 
-    try {
-        await questSessionManager.initialize();
-    } catch (error) {
-        logger.error(`[Quest] Khởi tạo thất bại: ${error.stack || error}`);
-    }
+
 });
 
 // Xử lý slash commands
@@ -126,7 +121,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     if (!interaction.isButton() && !interaction.isStringSelectMenu() && !interaction.isModalSubmit()) return;
 
     try {
-        if (await handleQuestInteraction(interaction)) return;
+
         await handleShopInteraction(interaction);
     } catch (error) {
         logger.error(`[Interaction] Lỗi xử lý: ${error.message}`);
@@ -292,7 +287,6 @@ async function shutdown(signal) {
     logger.info(`[Shutdown] Nhận ${signal}, đang dừng các session...`);
 
     try {
-        await questSessionManager.shutdown();
         client.destroy();
         await mongoose.disconnect();
     } catch (error) {

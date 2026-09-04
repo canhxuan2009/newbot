@@ -3,10 +3,30 @@ const { hasPermission } = require('../utils/permissions');
 const Product = require('../models/product');
 const Setting = require('../models/setting');
 
+function formatShortPrice(price) {
+    const num = Number(price);
+    if (isNaN(num) || num <= 0) return '0k';
+
+    if (num >= 1_000_000) {
+        const val = num / 1_000_000;
+        const formatted = Number(val.toFixed(2)).toString().replace('.', ',');
+        return `${formatted}M`;
+    }
+
+    if (num >= 1_000) {
+        const val = num / 1_000;
+        const formatted = Number(val.toFixed(2)).toString().replace('.', ',');
+        return `${formatted}k`;
+    }
+
+    return String(num);
+}
+
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('shop')
         .setDescription('Mở bảng điều khiển Shop Bán Tài Khoản (Admin Only)'),
+    formatShortPrice,
 
     async execute(interaction) {
         if (!hasPermission(interaction, PermissionFlagsBits.Administrator)) {
@@ -41,11 +61,20 @@ module.exports = {
         if (embedConfig.image) embed.setImage(embedConfig.image);
         if (embedConfig.thumbnail) embed.setThumbnail(embedConfig.thumbnail);
 
-        const options = shopProducts.map(product => ({
-            label: product.label,
-            value: product.id,
-            emoji: product.emoji || '📦'
-        }));
+        const options = shopProducts.map(product => {
+            const shortPrice = formatShortPrice(product.price);
+            const suffix = ` | ${shortPrice}`;
+            const maxNameLen = 100 - suffix.length;
+            const name = product.label.length > maxNameLen
+                ? product.label.slice(0, maxNameLen - 1) + '…'
+                : product.label;
+
+            return {
+                label: `${name}${suffix}`,
+                value: product.id,
+                emoji: product.emoji || '📦'
+            };
+        });
 
         const selectMenu = new StringSelectMenuBuilder()
             .setCustomId('shop_product_select')

@@ -30,6 +30,11 @@ const STATUS_LABELS = {
     CANCELLED: '❌ Đã huỷ',
 };
 
+function cleanDiscordId(id) {
+    if (!id) return '';
+    return String(id).replace(/[<@!>]/g, '').trim();
+}
+
 async function getBankSettings() {
     let bankId = process.env.ESCROW_BANK_ID || 'BIDV';
     let bankAccount = process.env.ESCROW_BANK_ACCOUNT || '';
@@ -42,7 +47,7 @@ async function getBankSettings() {
             bankId = setting.value.bankId || bankId;
             bankAccount = setting.value.bankAccount || bankAccount;
             bankName = setting.value.bankName || bankName;
-            staffId = setting.value.staffId || '';
+            staffId = cleanDiscordId(setting.value.staffId) || '';
         }
     } catch (e) {
         logger.error('Lỗi khi lấy bank settings: ' + e);
@@ -50,15 +55,16 @@ async function getBankSettings() {
     return { bankId, bankAccount, bankName, staffId };
 }
 
-function buildShopEmbed(ticket, guild, product) {
+function buildShopEmbed(ticket, guild, product, staffId) {
     const statusLabel = STATUS_LABELS[ticket.status] || ticket.status;
+    const currentStaffId = cleanDiscordId(staffId) || cleanDiscordId(ticket?.staffId) || SHOP_ADMIN_ID;
 
     const embed = new EmbedBuilder()
         .setColor(ticket.status === 'COMPLETED' ? 0x2ecc71 : ticket.status === 'CANCELLED' ? 0xe74c3c : 0xf1c40f)
         .setTitle(`🛒 Giao Dịch Mua Hàng — #${ticket.ticketId}`)
         .addFields(
             { name: '👤 Người Mua', value: `<@${ticket.buyerId}>`, inline: true },
-            { name: '🛡️ Nhân Viên Xử Lý', value: `<@${SHOP_ADMIN_ID}>`, inline: true },
+            { name: '🛡️ Nhân Viên Xử Lý', value: `<@${currentStaffId}>`, inline: true },
             { name: '📦 Sản Phẩm', value: `**${product && product.emoji ? product.emoji + ' ' : ''}${ticket.productName}**${product && product.description ? `\n*${product.description.trim()}*` : ''}`, inline: false },
             { name: '💰 Số Tiền Cần Thanh Toán', value: `**${ticket.price.toLocaleString('vi-VN')} VND**`, inline: false },
         );
@@ -73,7 +79,7 @@ function buildShopEmbed(ticket, guild, product) {
             statusNote = `Vui lòng chuyển khoản **${ticket.price.toLocaleString('vi-VN')} VND** theo thông tin bên dưới.\nSau khi chuyển khoản thành công, hãy bấm nút **✅ Đã chuyển khoản**.`;
             break;
         case 'PAID':
-            statusNote = `Người mua đã xác nhận chuyển khoản. Chờ <@${SHOP_ADMIN_ID}> kiểm tra và giao hàng.`;
+            statusNote = `Người mua đã xác nhận chuyển khoản. Chờ <@${currentStaffId}> kiểm tra và giao hàng.`;
             break;
         case 'DELIVERED':
             statusNote = `Hàng đã được giao. Vui lòng kiểm tra.`;
@@ -174,8 +180,18 @@ async function updateShopChannelName(channel, ticket) {
 }
 
 async function refreshShopMessage(channel, ticket, guild) {
-    const product = await Product.findOne({ id: ticket.productId });
-    const embed = buildShopEmbed(ticket, guild, product);
+    const [product, bankConfig] = await Promise.all([
+        Product.findOne({ id: ticket.productId }),
+        getBankSettings()
+    ]);
+    const staffId = cleanDiscordId(bankConfig.staffId) || cleanDiscordId(ticket?.staffId) || SHOP_ADMIN_ID;
+
+    if (ticket && bankConfig.staffId && ticket.staffId !== staffId) {
+        ticket.staffId = staffId;
+        await ticket.save().catch(() => {});
+    }
+
+    const embed = buildShopEmbed(ticket, guild, product, staffId);
     const components = buildShopButtons(ticket);
 
     updateShopChannelName(channel, ticket);
@@ -187,10 +203,19 @@ async function refreshShopMessage(channel, ticket, guild) {
             && m.embeds[0]?.title?.includes('Giao Dịch Mua Hàng')
         );
 
+        const newContent = `🛒 **Ticket Mua Hàng — #${ticket.ticketId}**\nNgười mua: <@${ticket.buyerId}>\nNhân viên xử lý: <@${staffId}>`;
+
         if (botMsg) {
-            await botMsg.edit({ embeds: [embed], components });
+            const embedsToUpdate = [embed];
+            if (ticket.status === 'WAITING_PAYMENT') {
+                const existingBankEmbed = botMsg.embeds.find(e => e.title?.includes('Thông Tin Thanh Toán'));
+                if (existingBankEmbed) {
+                    embedsToUpdate.push(existingBankEmbed);
+                }
+            }
+            await botMsg.edit({ content: newContent, embeds: embedsToUpdate, components });
         } else {
-            await channel.send({ embeds: [embed], components });
+            await channel.send({ content: newContent, embeds: [embed], components });
         }
     } catch (err) {
         logger.error(`[Shop] Lỗi refreshShopMessage: ${err.message}`);
@@ -273,33 +298,45 @@ async function handleShopInteraction(interaction) {
 
         try {
             const bankConfig = await getBankSettings();
-            const staffIdToUse = bankConfig.staffId || SHOP_ADMIN_ID;
+            const staffIdToUse = cleanDiscordId(bankConfig.staffId) || SHOP_ADMIN_ID;
+
+            const permissionOverwrites = [
+                {
+                    id: guild.id,
+                    type: 0,
+                    deny: [PermissionFlagsBits.ViewChannel],
+                },
+                {
+                    id: buyer.id,
+                    type: 1,
+                    allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.AttachFiles, PermissionFlagsBits.ReadMessageHistory],
+                },
+                {
+                    id: staffIdToUse,
+                    type: 1,
+                    allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ManageMessages, PermissionFlagsBits.AttachFiles, PermissionFlagsBits.ReadMessageHistory],
+                },
+                {
+                    id: interaction.client.user.id,
+                    type: 1,
+                    allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ManageMessages, PermissionFlagsBits.ManageChannels, PermissionFlagsBits.ReadMessageHistory],
+                },
+            ];
+
+            for (const adminId of SHOP_ADMIN_IDS) {
+                if (adminId && adminId !== staffIdToUse && !permissionOverwrites.some(p => p.id === adminId)) {
+                    permissionOverwrites.push({
+                        id: adminId,
+                        type: 1,
+                        allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ManageMessages, PermissionFlagsBits.AttachFiles, PermissionFlagsBits.ReadMessageHistory],
+                    });
+                }
+            }
 
             const channelOptions = {
                 name: `nem-${buyer.displayName.toLowerCase().replace(/[^a-z0-9]/g, '')}-${ticketId.toLowerCase()}`,
                 type: ChannelType.GuildText,
-                permissionOverwrites: [
-                    {
-                        id: guild.id,
-                        type: 0,
-                        deny: [PermissionFlagsBits.ViewChannel],
-                    },
-                    {
-                        id: buyer.id,
-                        type: 1,
-                        allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.AttachFiles, PermissionFlagsBits.ReadMessageHistory],
-                    },
-                    {
-                        id: staffIdToUse,
-                        type: 1,
-                        allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ManageMessages, PermissionFlagsBits.AttachFiles, PermissionFlagsBits.ReadMessageHistory],
-                    },
-                    {
-                        id: interaction.client.user.id,
-                        type: 1,
-                        allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ManageMessages, PermissionFlagsBits.ManageChannels, PermissionFlagsBits.ReadMessageHistory],
-                    },
-                ],
+                permissionOverwrites,
             };
 
             if (categoryId) {
@@ -313,6 +350,7 @@ async function handleShopInteraction(interaction) {
                 channelId: ticketChannel.id,
                 ticketId,
                 buyerId: buyer.id,
+                staffId: staffIdToUse,
                 productId: product.id,
                 productName: product.label,
                 price: product.price,
@@ -321,7 +359,7 @@ async function handleShopInteraction(interaction) {
 
             await updateShopChannelName(ticketChannel, ticket);
 
-            const embed = buildShopEmbed(ticket, guild, product);
+            const embed = buildShopEmbed(ticket, guild, product, staffIdToUse);
             const components = buildShopButtons(ticket);
 
             const qrUrl = `https://img.vietqr.io/image/${bankConfig.bankId}-${bankConfig.bankAccount}-compact.png?amount=${product.price}&addInfo=${ticketId}&accountName=${encodeURIComponent(bankConfig.bankName)}`;
@@ -348,7 +386,7 @@ async function handleShopInteraction(interaction) {
                 content: `✅ Đã tạo ticket mua hàng thành công!\n👉 Vào <#${ticketChannel.id}> để tiếp tục.`,
             });
 
-            logger.info(`[Shop] Ticket #${ticketId} được tạo bởi ${buyer.user.tag}, Sản phẩm: ${product.label}`);
+            logger.info(`[Shop] Ticket #${ticketId} được tạo bởi ${buyer.user.tag}, Sản phẩm: ${product.label}, Nhân viên: ${staffIdToUse}`);
 
         } catch (err) {
             logger.error(`[Shop] Lỗi tạo ticket: ${err.message}`);
@@ -370,8 +408,17 @@ async function handleShopInteraction(interaction) {
         const ticket = await ShopTicket.findOne({ channelId: interaction.channel.id });
         if (!ticket) return false;
 
+        const bankConfig = await getBankSettings();
+        const staffIdToUse = cleanDiscordId(bankConfig.staffId) || cleanDiscordId(ticket.staffId) || SHOP_ADMIN_ID;
+
         const isBuyer = interaction.user.id === ticket.buyerId;
-        const isAdmin = SHOP_ADMIN_IDS.includes(interaction.user.id) || interaction.guild.ownerId === interaction.user.id;
+        const isStaff = 
+            interaction.user.id === staffIdToUse ||
+            (ticket.staffId && interaction.user.id === cleanDiscordId(ticket.staffId));
+        const isAdmin = 
+            isStaff ||
+            SHOP_ADMIN_IDS.includes(interaction.user.id) || 
+            interaction.guild.ownerId === interaction.user.id;
 
         switch (interaction.customId) {
             case 'shop_payment_done': {
@@ -380,10 +427,13 @@ async function handleShopInteraction(interaction) {
 
                 await interaction.deferUpdate();
                 ticket.status = 'PAID';
+                if (!ticket.staffId && staffIdToUse) {
+                    ticket.staffId = staffIdToUse;
+                }
                 await ticket.save();
 
                 await refreshShopMessage(interaction.channel, ticket, interaction.guild);
-                await interaction.channel.send(`🔔 <@${SHOP_ADMIN_ID}> Người mua đã xác nhận chuyển khoản. Vui lòng kiểm tra và giao hàng.`);
+                await interaction.channel.send(`🔔 <@${staffIdToUse}> Người mua đã xác nhận chuyển khoản. Vui lòng kiểm tra và giao hàng.`);
                 break;
             }
             case 'shop_delivered': {

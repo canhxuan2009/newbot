@@ -5,6 +5,7 @@ const shopTicketSchema = new mongoose.Schema({
     channelId: { type: String, required: true },
     ticketId: { type: String, required: true, unique: true }, // VD: SHOP-1234
     buyerId: { type: String, required: true },
+    staffId: { type: String },
     productId: { type: String, required: true },
     productName: { type: String, required: true },
     price: { type: Number, required: true },

@@ -333,6 +333,16 @@ async function handleShopInteraction(interaction) {
                 }
             }
 
+            const supportRoleId = cleanDiscordId(process.env.SHOP_SUPPORT_ROLE_ID || process.env.SUPPORT_ROLE_ID);
+            if (supportRoleId && !permissionOverwrites.some(p => p.id === supportRoleId)) {
+                permissionOverwrites.push({
+                    id: supportRoleId,
+                    type: 0,
+                    allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.AttachFiles, PermissionFlagsBits.ReadMessageHistory],
+                });
+            }
+
+
             const channelOptions = {
                 name: `nem-${buyer.displayName.toLowerCase().replace(/[^a-z0-9]/g, '')}-${ticketId.toLowerCase()}`,
                 type: ChannelType.GuildText,

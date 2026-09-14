@@ -1,7 +1,7 @@
 require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
-const { Client, Collection, GatewayIntentBits, Events, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
+const { Client, Collection, GatewayIntentBits, Events, AttachmentBuilder, PermissionFlagsBits } = require('discord.js');
 const mongoose = require('mongoose');
 const logger = require('./utils/logger');
 const { init: initAutoRename, scheduleRename } = require('./utils/autoRename');
@@ -14,7 +14,22 @@ const { autoResumeQuests, handleQuestInteraction } = require('./utils/questInter
 const SHOP_ADMIN_IDS = (process.env.SHOP_ADMIN_ID || '1053646107785302069,717336894941167646')
     .split(',')
     .map((id) => id.trim());
-const QR_IMAGE_URL = process.env.QR_IMAGE_URL || 'https://media.discordapp.net/attachments/1524083621512613918/1549073927064649738/image.png?ex=6aa95f04&is=6aa80d84&hm=6aea728ad3cbe3b77d63e80eed10aad5cf4ca5dcfeaf567a0b4035a11b2eabaf&=&format=webp&quality=lossless&width=295&height=640';
+
+function getQrImagePath() {
+    if (process.env.QR_IMAGE_PATH && fs.existsSync(process.env.QR_IMAGE_PATH)) {
+        return process.env.QR_IMAGE_PATH;
+    }
+    const assetsDir = path.join(__dirname, '../assets');
+    const specificPath = path.join(assetsDir, 'snapedit_1789398968122.jpeg');
+    if (fs.existsSync(specificPath)) return specificPath;
+
+    if (fs.existsSync(assetsDir)) {
+        const files = fs.readdirSync(assetsDir);
+        const img = files.find(f => f.match(/\.(png|jpe?g|webp)$/i) && !f.includes('menu'));
+        if (img) return path.join(assetsDir, img);
+    }
+    return null;
+}
 
 // Cấu hình dịch tự động DonutSMP
 const TRANSLATE_SOURCE = process.env.TRANSLATE_SOURCE_CHANNEL;
@@ -197,14 +212,18 @@ client.on(Events.MessageCreate, async (message) => {
 
         if (!isAdmin) return;
 
-        const qrEmbed = new EmbedBuilder()
-            .setColor(0x2ecc71)
-            .setImage(QR_IMAGE_URL);
+        const qrPath = getQrImagePath();
+        if (!qrPath) {
+            logger.error('[PrefixCommand] Không tìm thấy file ảnh QR trong assets.');
+            return;
+        }
+
+        const attachment = new AttachmentBuilder(qrPath, { name: 'qr.jpeg' });
 
         try {
-            await message.channel.send({ embeds: [qrEmbed] });
+            await message.channel.send({ files: [attachment] });
         } catch (err) {
-            logger.error(`[PrefixCommand] Lỗi khi gửi !qr: ${err.message}`);
+            logger.error(`[PrefixCommand] Lỗi khi gửi ảnh !qr: ${err.message}`);
         }
     }
 });

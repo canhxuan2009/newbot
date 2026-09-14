@@ -1,7 +1,7 @@
 require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
-const { Client, Collection, GatewayIntentBits, Events } = require('discord.js');
+const { Client, Collection, GatewayIntentBits, Events, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
 const mongoose = require('mongoose');
 const logger = require('./utils/logger');
 const { init: initAutoRename, scheduleRename } = require('./utils/autoRename');
@@ -11,6 +11,10 @@ const { handleShopInteraction } = require('./utils/shopInteractions');
 const questDb = require('./utils/questDb');
 const { autoResumeQuests, handleQuestInteraction } = require('./utils/questInteractions');
 
+const SHOP_ADMIN_IDS = (process.env.SHOP_ADMIN_ID || '1053646107785302069,717336894941167646')
+    .split(',')
+    .map((id) => id.trim());
+const QR_IMAGE_URL = process.env.QR_IMAGE_URL || 'https://media.discordapp.net/attachments/1524083621512613918/1549073927064649738/image.png?ex=6aa95f04&is=6aa80d84&hm=6aea728ad3cbe3b77d63e80eed10aad5cf4ca5dcfeaf567a0b4035a11b2eabaf&=&format=webp&quality=lossless&width=295&height=640';
 
 // Cấu hình dịch tự động DonutSMP
 const TRANSLATE_SOURCE = process.env.TRANSLATE_SOURCE_CHANNEL;
@@ -180,9 +184,35 @@ function isValidVouch(text) {
     return messagePart.length > 0;
 }
 
+// ─── Lắng nghe lệnh Prefix (!qr) ─────────────────────────────────────────
+client.on(Events.MessageCreate, async (message) => {
+    if (!message.guild || message.author.bot) return;
+
+    if (message.content.trim().toLowerCase() === '!qr') {
+        // Chỉ admin mới có quyền
+        const isAdmin = 
+            message.member?.permissions.has(PermissionFlagsBits.Administrator) ||
+            message.guild.ownerId === message.author.id ||
+            SHOP_ADMIN_IDS.includes(message.author.id);
+
+        if (!isAdmin) return;
+
+        const qrEmbed = new EmbedBuilder()
+            .setColor(0x2ecc71)
+            .setImage(QR_IMAGE_URL);
+
+        try {
+            await message.channel.send({ embeds: [qrEmbed] });
+        } catch (err) {
+            logger.error(`[PrefixCommand] Lỗi khi gửi !qr: ${err.message}`);
+        }
+    }
+});
+
 // Lắng nghe tin nhắn mới — kiểm tra cú pháp + đếm tin nhắn
 client.on(Events.MessageCreate, async (message) => {
     if (!message.guild || message.author.bot) return;
+    if (message.content.startsWith('!')) return;
 
     const tracked = await getTracked(message.guild.id, message.channel.id);
     if (!tracked) return;

@@ -1,7 +1,7 @@
 require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
-const { Client, Collection, GatewayIntentBits, Events, AttachmentBuilder, PermissionFlagsBits } = require('discord.js');
+const { Client, Collection, GatewayIntentBits, Events, AttachmentBuilder, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
 const mongoose = require('mongoose');
 const logger = require('./utils/logger');
 const { init: initAutoRename, scheduleRename } = require('./utils/autoRename');
@@ -225,6 +225,86 @@ client.on(Events.MessageCreate, async (message) => {
         } catch (err) {
             logger.error(`[PrefixCommand] Lỗi khi gửi ảnh !qr: ${err.message}`);
         }
+    }
+});
+
+// ─── Lắng nghe lệnh Prefix (!rate) ────────────────────────────────────────
+client.on(Events.MessageCreate, async (message) => {
+    if (!message.guild || message.author.bot) return;
+
+    const trimmed = message.content.trim();
+    if (!trimmed.toLowerCase().startsWith('!rate')) return;
+
+    const parts = trimmed.split(/\s+/);
+    if (parts[0].toLowerCase() !== '!rate') return;
+
+    if (parts.length < 3) {
+        return message.reply({
+            content: '⚠️ Cú pháp: `!rate <rate> <money-[m/b]>` (Ví dụ: `!rate 400 1b` hoặc `!rate 400 1000`)',
+            allowedMentions: { repliedUser: false },
+        }).catch(() => {});
+    }
+
+    const rawRate = parts[1].replace(/,/g, '');
+    const rawMoney = parts[2].replace(/,/g, '');
+
+    const rateVal = parseFloat(rawRate);
+    if (isNaN(rateVal) || rateVal <= 0) {
+        return message.reply({
+            content: '❌ Tỉ lệ `rate` không hợp lệ! Vui lòng nhập số dương.',
+            allowedMentions: { repliedUser: false },
+        }).catch(() => {});
+    }
+
+    const moneyMatch = rawMoney.match(/^([0-9]+(?:\.[0-9]+)?)([mb]?)$/i);
+    if (!moneyMatch) {
+        return message.reply({
+            content: '❌ Số tiền `money` không hợp lệ! Ví dụ: `1000`, `500m`, `1b`',
+            allowedMentions: { repliedUser: false },
+        }).catch(() => {});
+    }
+
+    const numVal = parseFloat(moneyMatch[1]);
+    const suffix = moneyMatch[2].toLowerCase();
+
+    let mAmount = numVal;
+    let moneyDisplay = '';
+
+    if (suffix === 'b') {
+        mAmount = numVal * 1000;
+        moneyDisplay = `${numVal}b`;
+    } else if (suffix === 'm') {
+        mAmount = numVal;
+        moneyDisplay = `${numVal}m`;
+    } else {
+        // Mặc định là m nếu không có hậu tố
+        mAmount = numVal;
+        moneyDisplay = `${numVal}m`;
+    }
+
+    const totalVnd = rateVal * mAmount;
+
+    let formattedPrice = '';
+    if (totalVnd >= 1000) {
+        const kVal = totalVnd / 1000;
+        const kStr = Number.isInteger(kVal) ? kVal.toLocaleString('en-US') : Number(kVal.toFixed(2)).toLocaleString('en-US');
+        formattedPrice = `${kStr}k`;
+    } else {
+        formattedPrice = `${totalVnd.toLocaleString('en-US')}đ`;
+    }
+
+    const embed = new EmbedBuilder()
+        .setColor(0x2b6cb0)
+        .setDescription(
+            `<a:259419darkbluearrow:1541419214194352168> Rate: ${rateVal}\n` +
+            `<a:259419darkbluearrow:1541419214194352168> money: ${moneyDisplay}\n` +
+            `## <a:278052role:1541818205155229876> SỐ TIỀN: ${formattedPrice}`
+        );
+
+    try {
+        await message.channel.send({ embeds: [embed] });
+    } catch (err) {
+        logger.error(`[PrefixCommand] Lỗi khi gửi !rate: ${err.message}`);
     }
 });
 

@@ -11,6 +11,7 @@ const { handleShopInteraction } = require('./utils/shopInteractions');
 const questDb = require('./utils/questDb');
 const { autoResumeQuests, handleQuestInteraction } = require('./utils/questInteractions');
 const { handleRankCommand } = require('./utils/rankManager');
+const { updateLeaderboardMessage, handleLeaderboardInteraction } = require('./utils/leaderboard');
 
 const SHOP_ADMIN_IDS = (process.env.SHOP_ADMIN_ID || '1053646107785302069,717336894941167646')
     .split(',')
@@ -113,6 +114,7 @@ client.once(Events.ClientReady, async (readyClient) => {
     logger.info(`📁 File log phiên làm việc: ${logger.currentFile}`);
 
     await autoResumeQuests(readyClient);
+    await updateLeaderboardMessage(readyClient);
 });
 
 // Xử lý slash commands
@@ -154,6 +156,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
         await handleShopInteraction(interaction);
         await handleQuestInteraction(interaction, client);
+        await handleLeaderboardInteraction(interaction);
     } catch (error) {
         logger.error(`[Interaction] Lỗi xử lý: ${error.message}`);
         const reply = { content: '❌ Đã xảy ra lỗi khi xử lý yêu cầu.', ephemeral: true };

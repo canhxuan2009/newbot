@@ -1,5 +1,6 @@
 const Member = require('../models/member');
 const logger = require('./logger');
+const { updateLeaderboardMessage } = require('./leaderboard');
 
 const RANK_MILESTONES = [
     { key: 'DIAMOND', name: 'Kim Cương', amount: 10_000_000, envVar: 'RANK_ROLE_DIAMOND' },
@@ -297,6 +298,8 @@ async function handleRankCommand(message) {
 
     try {
         await message.channel.send({ content: replyContent });
+        // Cập nhật Bảng Xếp Hạng thời gian thực tại kênh Admin
+        updateLeaderboardMessage(message.client).catch(() => {});
     } catch (err) {
         logger.error(`[RankManager] Lỗi gửi thông báo rank: ${err.message}`);
     }

@@ -10,7 +10,7 @@ const { translateToVietnamese } = require('./utils/translator');
 const { handleShopInteraction } = require('./utils/shopInteractions');
 const questDb = require('./utils/questDb');
 const { autoResumeQuests, handleQuestInteraction } = require('./utils/questInteractions');
-const { handleRankCommand } = require('./utils/rankManager');
+const { handleRankCommand, handleRankUpCommand, handleRankUpButton } = require('./utils/rankManager');
 const { updateLeaderboardMessage, handleLeaderboardInteraction } = require('./utils/leaderboard');
 
 const SHOP_ADMIN_IDS = (process.env.SHOP_ADMIN_ID || '1053646107785302069,717336894941167646')
@@ -157,6 +157,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
         await handleShopInteraction(interaction);
         await handleQuestInteraction(interaction, client);
         await handleLeaderboardInteraction(interaction);
+        await handleRankUpButton(interaction);
     } catch (error) {
         logger.error(`[Interaction] Lỗi xử lý: ${error.message}`);
         const reply = { content: '❌ Đã xảy ra lỗi khi xử lý yêu cầu.', ephemeral: true };
@@ -331,6 +332,27 @@ client.on(Events.MessageCreate, async (message) => {
     if (!isAdmin) return;
 
     await handleRankCommand(message);
+});
+
+// ─── Lắng nghe lệnh Prefix (!rankup) ──────────────────────────────────────
+client.on(Events.MessageCreate, async (message) => {
+    if (!message.guild || message.author.bot) return;
+
+    const trimmed = message.content.trim();
+    if (!trimmed.toLowerCase().startsWith('!rankup')) return;
+
+    const parts = trimmed.split(/\s+/);
+    if (parts[0].toLowerCase() !== '!rankup') return;
+
+    // Chỉ Admin / Staff có quyền thao tác
+    const isAdmin = 
+        message.member?.permissions.has(PermissionFlagsBits.Administrator) ||
+        message.guild.ownerId === message.author.id ||
+        SHOP_ADMIN_IDS.includes(message.author.id);
+
+    if (!isAdmin) return;
+
+    await handleRankUpCommand(message);
 });
 
 

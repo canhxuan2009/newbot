@@ -1,3 +1,10 @@
+const {
+    ActionRowBuilder,
+    ButtonBuilder,
+    ButtonStyle,
+    EmbedBuilder,
+    PermissionFlagsBits,
+} = require('discord.js');
 const Member = require('../models/member');
 const logger = require('./logger');
 const { updateLeaderboardMessage } = require('./leaderboard');
@@ -305,9 +312,261 @@ async function handleRankCommand(message) {
     }
 }
 
+const SHOP_ADMIN_IDS = (process.env.SHOP_ADMIN_ID || '1053646107785302069,717336894941167646')
+    .split(',')
+    .map((id) => id.trim());
+
+function checkIsAdmin(user, member, guild) {
+    if (guild && guild.ownerId === user.id) return true;
+    if (SHOP_ADMIN_IDS.includes(user.id)) return true;
+    if (member && member.permissions && member.permissions.has(PermissionFlagsBits.Administrator)) return true;
+    return false;
+}
+
+/**
+ * Xử lý lệnh !rankup <rate> <money> [@user]
+ */
+async function handleRankUpCommand(message) {
+    const parts = message.content.trim().split(/\s+/);
+    if (parts.length < 3) {
+        return message.reply({
+            content: '⚠️ Cú pháp: `!rankup <rate> <money> [@user]`\nVí dụ: `!rankup 500 500000m` hoặc `!rankup 500 1b`',
+            allowedMentions: { repliedUser: false },
+        }).catch(() => {});
+    }
+
+    // 1. Phân tích rate
+    const rawRate = parts[1].replace(/,/g, '').replace(/đ$/i, '').trim();
+    const rateVal = parseFloat(rawRate);
+    if (isNaN(rateVal) || rateVal <= 0) {
+        return message.reply({
+            content: '❌ Tỉ lệ `rate` không hợp lệ! Ví dụ: `500` hoặc `500đ`.',
+            allowedMentions: { repliedUser: false },
+        }).catch(() => {});
+    }
+
+    // 2. Phân tích số lượng money
+    const rawMoney = parts[2].replace(/,/g, '').trim();
+    const moneyMatch = rawMoney.match(/^([0-9]+(?:\.[0-9]+)?)([mb]?)$/i);
+    if (!moneyMatch) {
+        return message.reply({
+            content: '❌ Số tiền `money` không hợp lệ! Ví dụ: `500000`, `500000m`, `1b`.',
+            allowedMentions: { repliedUser: false },
+        }).catch(() => {});
+    }
+
+    const numVal = parseFloat(moneyMatch[1]);
+    const suffix = (moneyMatch[2] || 'm').toLowerCase();
+    const mAmount = suffix === 'b' ? numVal * 1000 : numVal;
+    const totalVnd = Math.round(rateVal * mAmount);
+
+    const qtyDisplay = `${numVal}${suffix}`;
+
+    // 3. Tìm khách hàng
+    const targetUserId = await detectCustomerId(message, parts);
+    if (!targetUserId) {
+        return message.reply({
+            content: '⚠️ Không thể tự nhận diện khách hàng trong kênh này. Vui lòng tag khách hàng: `!rankup <rate> <money> @user`',
+            allowedMentions: { repliedUser: false },
+        }).catch(() => {});
+    }
+
+    // 4. Tạo Embed màu hồng cánh sen (#E0218A)
+    const embed = new EmbedBuilder()
+        .setColor(0xE0218A) // Màu hồng cánh sen
+        .setTitle('NEM MARKET')
+        .setDescription(
+            `**Rate:**\n${rateVal.toLocaleString('vi-VN')}đ\n\n` +
+            `**Qty:**\n${qtyDisplay} = ${totalVnd.toLocaleString('vi-VN')}đ`
+        );
+
+    // 5. Tạo 3 nút bấm (Rankup, Balance, History)
+    const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+            .setCustomId(`rkup_exec_${targetUserId}_${totalVnd}`)
+            .setLabel('Rankup')
+            .setStyle(ButtonStyle.Success),
+        new ButtonBuilder()
+            .setCustomId('rkup_bal')
+            .setLabel('Balance')
+            .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+            .setCustomId('rkup_hist')
+            .setLabel('History')
+            .setStyle(ButtonStyle.Secondary)
+    );
+
+    try {
+        await message.channel.send({ embeds: [embed], components: [row] });
+    } catch (err) {
+        logger.error(`[RankUp] Lỗi gửi tin nhắn !rankup: ${err.message}`);
+    }
+}
+
+/**
+ * Xử lý sự kiện nút bấm Rankup, Balance, History
+ */
+async function handleRankUpButton(interaction) {
+    if (!interaction.isButton()) return false;
+    const { customId } = interaction;
+
+    if (!customId.startsWith('rkup_')) return false;
+
+    // 1. Xử lý nút Balance (xem số tiền của chính người bấm)
+    if (customId === 'rkup_bal') {
+        const memberData = await Member.findOne({
+            guildId: interaction.guildId,
+            userId: interaction.user.id,
+        });
+        const total = memberData ? memberData.totalAmount : 0;
+        const rank = getHighestMilestone(total);
+        const rankStr = rank ? `${rank.name}` : 'Chưa có rank';
+
+        await interaction.reply({
+            content: `💵 **Số tiền đã giao dịch của bạn:** **${total.toLocaleString('vi-VN')}đ**\n` +
+                     `🏆 **Hạng hiện tại:** **${rankStr}**`,
+            ephemeral: true,
+        });
+        return true;
+    }
+
+    // 2. Xử lý nút History (xem lịch sử giao dịch của chính người bấm)
+    if (customId === 'rkup_hist') {
+        const memberData = await Member.findOne({
+            guildId: interaction.guildId,
+            userId: interaction.user.id,
+        });
+        const txs = memberData?.transactions || [];
+        if (txs.length === 0) {
+            await interaction.reply({
+                content: '📭 Bạn chưa có lịch sử giao dịch nào được ghi nhận.',
+                ephemeral: true,
+            });
+            return true;
+        }
+
+        const last5 = [...txs].reverse().slice(0, 5);
+        const lines = last5.map(t => {
+            const icon = t.type === 'SUB' ? '🔴 -' : '🟢 +';
+            const dateStr = t.date ? new Date(t.date).toLocaleDateString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' }) : '';
+            return `• ${icon}${t.amount.toLocaleString('vi-VN')}đ (${dateStr})`;
+        });
+
+        await interaction.reply({
+            content: `📜 **Lịch sử 5 giao dịch gần đây của bạn:**\n${lines.join('\n')}`,
+            ephemeral: true,
+        });
+        return true;
+    }
+
+    // 3. Xử lý nút Rankup (Chỉ dành cho Admin)
+    if (customId.startsWith('rkup_exec_')) {
+        const isAdmin = checkIsAdmin(interaction.user, interaction.member, interaction.guild);
+        if (!isAdmin) {
+            await interaction.reply({
+                content: '❌ Chỉ Admin mới có quyền thực hiện Rankup!',
+                ephemeral: true,
+            });
+            return true;
+        }
+
+        const parts = customId.split('_');
+        const targetUserId = parts[2];
+        const amount = parseInt(parts[3], 10);
+
+        if (!targetUserId || isNaN(amount) || amount <= 0) {
+            await interaction.reply({
+                content: '❌ Dữ liệu đơn không hợp lệ.',
+                ephemeral: true,
+            });
+            return true;
+        }
+
+        await interaction.deferUpdate();
+
+        // Cập nhật database Member
+        let memberData = await Member.findOne({ guildId: interaction.guildId, userId: targetUserId });
+        if (!memberData) {
+            memberData = new Member({
+                guildId: interaction.guildId,
+                userId: targetUserId,
+                totalAmount: 0,
+                transactions: [],
+            });
+        }
+
+        const oldAmount = memberData.totalAmount;
+        const newAmount = oldAmount + amount;
+
+        memberData.totalAmount = newAmount;
+        memberData.transactions.push({
+            amount: amount,
+            type: 'ADD',
+            staffId: interaction.user.id,
+            channelId: interaction.channel.id,
+            date: new Date(),
+        });
+
+        await memberData.save();
+
+        // Đồng bộ Role (chỉ giữ role cao nhất)
+        const targetMember = await interaction.guild.members.fetch(targetUserId).catch(() => null);
+        if (targetMember) {
+            await syncMemberRankRole(interaction.guild, targetMember, newAmount);
+        }
+
+        // Kiểm tra Rank Up mốc mới
+        const oldMilestone = getHighestMilestone(oldAmount);
+        const newMilestone = getHighestMilestone(newAmount);
+        const isRankUp = newMilestone && (!oldMilestone || newMilestone.amount > oldMilestone.amount);
+
+        // Vô hiệu hóa nút Rankup trên tin nhắn gốc
+        const updatedRow = new ActionRowBuilder().addComponents(
+            new ButtonBuilder()
+                .setCustomId('rkup_done')
+                .setLabel('✅ Đã Rankup')
+                .setStyle(ButtonStyle.Success)
+                .setDisabled(true),
+            new ButtonBuilder()
+                .setCustomId('rkup_bal')
+                .setLabel('Balance')
+                .setStyle(ButtonStyle.Primary),
+            new ButtonBuilder()
+                .setCustomId('rkup_hist')
+                .setLabel('History')
+                .setStyle(ButtonStyle.Secondary)
+        );
+
+        await interaction.editReply({ components: [updatedRow] }).catch(() => {});
+
+        // Gửi thông báo trong kênh
+        const formatNumber = (num) => num.toLocaleString('vi-VN');
+        let replyContent = `💰 **Đã cộng ${formatNumber(amount)}đ** / Money ${formatNumber(amount)} added!\n` +
+            `💵 **Số tiền đã giao dịch** / Total transacted: **${formatNumber(newAmount)}đ**`;
+
+        if (isRankUp) {
+            replyContent += `\n\n🎉 **CHÚC MỪNG! / CONGRATULATIONS!**\n` +
+                `🏆 Bạn đã đạt mốc **${formatNumber(newMilestone.amount)}đ** và được cấp role!\n` +
+                `✨ You reached **${formatNumber(newMilestone.amount)}đ** and got the role!`;
+        }
+
+        await interaction.channel.send({ content: replyContent }).catch(() => {});
+
+        // Cập nhật Bảng Xếp Hạng thời gian thực tại kênh Admin
+        updateLeaderboardMessage(interaction.client).catch(() => {});
+
+        return true;
+    }
+
+    return false;
+}
+
 module.exports = {
     handleRankCommand,
+    handleRankUpCommand,
+    handleRankUpButton,
     parseAmount,
     detectCustomerId,
 };
+
 

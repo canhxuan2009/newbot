@@ -168,19 +168,48 @@ async function handleRankCommand(message) {
     const parts = message.content.trim().split(/\s+/);
     if (parts.length < 2) {
         return message.reply({
-            content: '⚠️ Cú pháp: `!rank <số tiền> [-]` (Ví dụ: `!rank 100k` hoặc `!rank 50k -`)',
+            content: '⚠️ Cú pháp: `!rank [-]<số tiền>` (Ví dụ: `!rank 100k` hoặc `!rank -50k`)',
             allowedMentions: { repliedUser: false },
         }).catch(() => {});
     }
 
-    // Kiểm tra có dấu trừ không (trừ tiền)
-    const isSubtract = parts.some(p => p === '-' || p.startsWith('-')) || parts[1].startsWith('-');
+    // 1. Kiểm tra dấu trừ và lấy số tiền
+    let isSubtract = false;
+    let amountStr = '';
 
-    // Lấy phần tử chứa số tiền
-    let amountStr = parts.slice(1).find(p => p !== '-' && p !== '@everyone' && p !== '@here');
+    for (let i = 1; i < parts.length; i++) {
+        const p = parts[i];
+        if (p === '@everyone' || p === '@here' || p.startsWith('<@')) continue;
+
+        if (p === '-') {
+            isSubtract = true;
+            continue;
+        }
+
+        if (p.startsWith('-')) {
+            isSubtract = true;
+            amountStr = p.slice(1);
+            break;
+        }
+
+        if (p.endsWith('-')) {
+            isSubtract = true;
+            amountStr = p.slice(0, -1);
+            break;
+        }
+
+        amountStr = p;
+        break;
+    }
+
+    // Nếu còn có tham số '-' ở bất kỳ đâu trong lệnh
+    if (parts.some(p => p === '-')) {
+        isSubtract = true;
+    }
+
     if (!amountStr) {
         return message.reply({
-            content: '❌ Vui lòng nhập số tiền hợp lệ (Ví dụ: `100k`, `1m`, `5m`, `10m`, `250.000.000`).',
+            content: '❌ Vui lòng nhập số tiền hợp lệ (Ví dụ: `!rank 100k` hoặc `!rank -50k`).',
             allowedMentions: { repliedUser: false },
         }).catch(() => {});
     }
@@ -188,7 +217,7 @@ async function handleRankCommand(message) {
     const amount = parseAmount(amountStr);
     if (!amount) {
         return message.reply({
-            content: '❌ Số tiền không hợp lệ! Ví dụ: `!rank 100k`, `!rank 1m`, `!rank 250.000.000`',
+            content: '❌ Số tiền không hợp lệ! Ví dụ: `!rank 100k`, `!rank -50k`, `!rank 1m`, `!rank 250.000.000`',
             allowedMentions: { repliedUser: false },
         }).catch(() => {});
     }
@@ -197,7 +226,7 @@ async function handleRankCommand(message) {
     const targetUserId = await detectCustomerId(message);
     if (!targetUserId) {
         return message.reply({
-            content: '⚠️ Không thể tự nhận diện khách hàng trong ticket này. Vui lòng tag khách hàng: `!rank <tiền> @user [-]`',
+            content: '⚠️ Không thể tự nhận diện khách hàng trong ticket này. Vui lòng tag khách hàng: `!rank [-]<tiền> @user`',
             allowedMentions: { repliedUser: false },
         }).catch(() => {});
     }

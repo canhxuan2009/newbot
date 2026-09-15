@@ -165,15 +165,6 @@ async function detectCustomerId(message) {
  * Xử lý lệnh !rank
  */
 async function handleRankCommand(message) {
-    // 1. Kiểm tra Category
-    const allowedCategory = process.env.ESCROW_CATEGORY_ID || '1539514257731747940';
-    if (message.channel.parentId !== allowedCategory) {
-        return message.reply({
-            content: '❌ Lệnh này chỉ hoạt động trong danh mục Ticket giao dịch.',
-            allowedMentions: { repliedUser: false },
-        }).catch(() => {});
-    }
-
     const parts = message.content.trim().split(/\s+/);
     if (parts.length < 2) {
         return message.reply({
@@ -278,3 +269,4 @@ module.exports = {
     parseAmount,
     detectCustomerId,
 };
+

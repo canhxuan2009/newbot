@@ -83,10 +83,16 @@ async function syncMemberRankRole(guild, member, newAmount) {
 /**
  * Tự động tìm ID khách hàng trong ticket
  */
-async function detectCustomerId(message) {
-    // 1. Tag trực tiếp trong lệnh (bỏ qua bot và người gõ lệnh)
-    const mention = message.mentions.users.find(u => !u.bot && u.id !== message.author.id);
+async function detectCustomerId(message, parts = []) {
+    // 1. Tag trực tiếp trong lệnh (bất kỳ user nào được tag mà không phải bot)
+    const mention = message.mentions.users.find(u => !u.bot);
     if (mention) return mention.id;
+
+    // 1.1 Kiểm tra nếu admin nhập trực tiếp ID Discord dạng chuỗi số (17-20 ký tự)
+    const rawId = parts.slice(1).find(p => /^\d{17,20}$/.test(p));
+    if (rawId && rawId !== message.client.user.id) {
+        return rawId;
+    }
 
     // 2. Ticket nội bộ của bot (ShopTicket)
     try {
@@ -179,7 +185,10 @@ async function handleRankCommand(message) {
 
     for (let i = 1; i < parts.length; i++) {
         const p = parts[i];
-        if (p === '@everyone' || p === '@here' || p.startsWith('<@')) continue;
+        // Bỏ qua tag user, role, channel, everyone hoặc ID Discord
+        if (p === '@everyone' || p === '@here' || p.startsWith('<@') || p.startsWith('<#') || /^\d{17,20}$/.test(p)) {
+            continue;
+        }
 
         if (p === '-') {
             isSubtract = true;
@@ -222,11 +231,11 @@ async function handleRankCommand(message) {
         }).catch(() => {});
     }
 
-    // 2. Tìm ID khách hàng
-    const targetUserId = await detectCustomerId(message);
+    // 2. Tìm ID khách hàng (truyền cả message và parts)
+    const targetUserId = await detectCustomerId(message, parts);
     if (!targetUserId) {
         return message.reply({
-            content: '⚠️ Không thể tự nhận diện khách hàng trong ticket này. Vui lòng tag khách hàng: `!rank [-]<tiền> @user`',
+            content: '⚠️ Không thể tự nhận diện khách hàng trong kênh này (hoặc bạn đang dùng ngoài ticket). Vui lòng tag khách hàng: `!rank [-]<số tiền> @user`',
             allowedMentions: { repliedUser: false },
         }).catch(() => {});
     }

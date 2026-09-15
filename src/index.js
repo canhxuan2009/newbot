@@ -10,6 +10,7 @@ const { translateToVietnamese } = require('./utils/translator');
 const { handleShopInteraction } = require('./utils/shopInteractions');
 const questDb = require('./utils/questDb');
 const { autoResumeQuests, handleQuestInteraction } = require('./utils/questInteractions');
+const { handleRankCommand } = require('./utils/rankManager');
 
 const SHOP_ADMIN_IDS = (process.env.SHOP_ADMIN_ID || '1053646107785302069,717336894941167646')
     .split(',')
@@ -307,6 +308,28 @@ client.on(Events.MessageCreate, async (message) => {
         logger.error(`[PrefixCommand] Lỗi khi gửi !rate: ${err.message}`);
     }
 });
+
+// ─── Lắng nghe lệnh Prefix (!rank) ────────────────────────────────────────
+client.on(Events.MessageCreate, async (message) => {
+    if (!message.guild || message.author.bot) return;
+
+    const trimmed = message.content.trim();
+    if (!trimmed.toLowerCase().startsWith('!rank')) return;
+
+    const parts = trimmed.split(/\s+/);
+    if (parts[0].toLowerCase() !== '!rank') return;
+
+    // Chỉ Admin / Staff có quyền thao tác
+    const isAdmin = 
+        message.member?.permissions.has(PermissionFlagsBits.Administrator) ||
+        message.guild.ownerId === message.author.id ||
+        SHOP_ADMIN_IDS.includes(message.author.id);
+
+    if (!isAdmin) return;
+
+    await handleRankCommand(message);
+});
+
 
 // Lắng nghe tin nhắn mới — kiểm tra cú pháp + đếm tin nhắn
 client.on(Events.MessageCreate, async (message) => {
